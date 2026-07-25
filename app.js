@@ -23,7 +23,8 @@
   /* ── designed product card, with real size chips that add to bag ── */
   const esc = s => String(s).replace(/"/g, '&quot;');
   const prod = (p, i) => {
-    const main = px(p.img[0], 760), alt = px(p.img[1] || p.img[0], 760);
+    // cards render at most 380px wide, so 620 still covers 2x screens
+    const main = px(p.img[0], 620), alt = px(p.img[1] || p.img[0], 620);
     const price = p.cp ? `<span class="prod__price"><s>${isk(p.cp)}</s>${isk(p.p)}</span>` : `<span class="prod__price">${isk(p.p)}</span>`;
     // chip shows just the size token ("S / Navy Blue" → "S"); full variant kept for the bag
     const sizes = (p.sz && p.sz.length)
