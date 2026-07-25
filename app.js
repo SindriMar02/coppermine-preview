@@ -78,32 +78,39 @@
     panTrack.insertAdjacentHTML('beforeend', frames.join(''));
   }
 
-  /* ── as-seen-on 3D wall: their REAL social videos (prototype: 12, not all 243) ── */
+  /* ── as-seen-on wall: their REAL social videos (prototype portion, not all 243) ── */
   const seenWall = $('#seenWall');
   if (seenWall) {
     const ugc = (CM.ugc || []).slice(0, 12);
     const cols = [[], [], []];
-    ugc.forEach((u, i) => cols[i % 3].push(u));
-    // preload="none" + lazy src: avoids N metadata fetches on load
-    const clip = u => `<figure class="seen__card"><video data-src="${u}" muted loop playsinline preload="none" disablepictureinpicture tabindex="-1"></video></figure>`;
+    ugc.forEach((u, i) => cols[i % 3].push({ u, i }));
+
+    /* Buffer during the loading screen so arriving at the section never stalls.
+       Duplicated elements share the same 9 URLs, so the copies come from cache.
+       Metered / slow connections opt out and stay lazy instead. */
+    const c = navigator.connection || {};
+    const thrifty = !!c.saveData || /^(slow-)?2g$|^3g$/.test(c.effectiveType || '');
+    const preloadFor = i => thrifty ? 'none' : (i < 6 ? 'auto' : 'metadata');
+
+    const clip = o => `<figure class="seen__card"><video src="${o.u}" muted loop playsinline preload="${preloadFor(o.i)}" disablepictureinpicture tabindex="-1"></video></figure>`;
     seenWall.innerHTML = cols.map((col, ci) => `<div class="seen__col ${ci % 2 ? 'seen__col--down' : 'seen__col--up'}">${col.map(clip).join('') + col.map(clip).join('')}</div>`).join('');
+
+    // nudge the browser to actually start buffering while the loader is still up
+    if (!thrifty) $$('.seen__card video', seenWall).forEach(v => { try { v.load(); } catch (e) {} });
 
     const clips = $$('.seen__card video', seenWall);
     const sectionEl = $('#seen');
     let sectionIn = false;
 
-    const start = v => {
-      if (!v.src) v.src = v.dataset.src;      // attach source only when needed
-      const p = v.play(); if (p && p.catch) p.catch(() => {});
-    };
+    const start = v => { const p = v.play(); if (p && p.catch) p.catch(() => {}); };
     const stop = v => { if (!v.paused) v.pause(); };
 
-    if (reduced || !('IntersectionObserver' in window)) {
-      // reduced motion: show a still first frame, never autoplay a wall of video
-      clips.forEach(v => { if (!v.src) v.src = v.dataset.src; });
+    if (reduced) {
+      // reduced motion: static first frames, never a wall of autoplaying video
+      clips.forEach(stop);
     } else {
       /* Only the cards actually on screen may decode. IntersectionObserver is
-         unreliable inside the wall's 3D transform (it over-reports), so this
+         unreliable inside the wall's transformed subtree (it over-reports), so this
          does a cheap geometry pass on a 250ms timer instead: 18 rect reads,
          nowhere near a per-frame cost, and it never touches the scroll event. */
       /* Hard cap on simultaneous decodes. A single 300ms timer drives everything:
