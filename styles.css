@@ -53,6 +53,13 @@ main,.foot{position:relative;z-index:1}
   -webkit-mask:url("assets/logo.png") center/contain no-repeat;
           mask:url("assets/logo.png") center/contain no-repeat}
 .load__ghost{background:rgba(242,234,224,.12)}
+/* Y2K glitch video: black knocked out via screen blend, sits over the mask layers.
+   .glitch-on is set by JS only once the video is confirmed playable. */
+.load__glitch{position:absolute;inset:-6% -4%;width:108%;height:112%;object-fit:contain;
+  mix-blend-mode:screen;opacity:0;transition:opacity .5s var(--ease);pointer-events:none;z-index:3}
+.load.glitch-on .load__glitch{opacity:1}
+.load.glitch-on .load__ghost{opacity:0}
+.load.glitch-on .load__fill{opacity:.55;mix-blend-mode:color-dodge}
 /* fill reveals bottom-up: deep copper at the base, hot at the crest */
 .load__fill{background:linear-gradient(180deg,#f0873a 0%,var(--accent) 48%,#8f3d12 100%);
   clip-path:inset(100% 0 0 0)}
