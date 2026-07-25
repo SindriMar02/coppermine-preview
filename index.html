@@ -18,31 +18,15 @@
 <!-- ░ VERTICAL-BARS BACKGROUND (21st.dev uilayout/vertical-bars, ported to vanilla) ░ -->
 <canvas class="bars" id="bars" aria-hidden="true"></canvas>
 
-<!-- ░ PRELOADER — copper rises through their wordmark ░ -->
+<!-- ░ PRELOADER — just the wordmark glitching, with a synthesised glitch SFX ░ -->
 <div class="load" id="load">
-  <div class="load__top">
-    <span class="mono">Coppermine — Reykjavík, Iceland</span>
-    <span class="mono">Fall / Winter ’25</span>
+  <div class="load__mark">
+    <!-- The still logo shows ONLY if the glitch clip cannot play. -->
+    <img class="load__still" id="loadStill" src="assets/logo.png" alt="Coppermine" />
+    <video class="load__glitch" id="loadGlitch" muted loop playsinline autoplay preload="auto" aria-hidden="true">
+      <source src="assets/logo-glitch.mp4" type="video/mp4" />
+    </video>
   </div>
-
-  <div class="load__mid">
-    <div class="load__mark">
-      <!-- Y2K glitch reveal. The clip's black frame is knocked out with
-           mix-blend-mode:screen so only the glitching wordmark shows.
-           The still logo underneath is shown ONLY if the clip cannot play. -->
-      <img class="load__still" id="loadStill" src="assets/logo.png" alt="Coppermine" />
-      <video class="load__glitch" id="loadGlitch" muted loop playsinline autoplay preload="auto" aria-hidden="true">
-        <source src="assets/logo-glitch.mp4" type="video/mp4" />
-      </video>
-    </div>
-  </div>
-
-  <div class="load__bot">
-    <div class="load__count"><span id="loadPct">00</span><i>%</i></div>
-    <span class="mono load__state" id="loadState">Smelting the collection</span>
-  </div>
-
-  <div class="load__bar" aria-hidden="true"><span id="loadBar"></span></div>
 </div>
 
 <!-- ░ NAV ░ -->

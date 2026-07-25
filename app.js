@@ -642,8 +642,7 @@ void main() {
   /* ══ preloader ══ */
   let booted = false;
   const boot = () => { if (booted) return; booted = true; document.body.classList.add('ready'); shaderBackground(); choreograph(); heroIn(); if (hasGsap) ScrollTrigger.refresh(); };
-  setTimeout(boot, 3200);
-  const pct = $('#loadPct'), bar = $('#loadBar'), state = $('#loadState');
+  setTimeout(boot, 3600);   // fail-safe: the loader can never stick
 
   /* Y2K glitch reveal. Inline opacity, set the moment the clip renders a frame,
      so no stylesheet rule can win over it. Still logo stays if it cannot play. */
@@ -663,17 +662,89 @@ void main() {
     });
     if (!reduced) { const p = glitch.play(); if (p && p.catch) p.catch(() => {}); }
   }
-  const paint = v => {
-    if (pct) pct.textContent = String(Math.min(100, Math.round(v))).padStart(2, '0');
-    if (bar) bar.style.width = v.toFixed(2) + '%';
-  };
-  if (reduced || !hasGsap) { paint(100); boot(); }
-  else {
-    const c = { v: 0 };
-    gsap.to(c, {
-      v: 100, duration: 1.9, ease: 'power2.inOut',
-      onUpdate: () => paint(c.v),
-      onComplete: () => { if (state) state.textContent = 'Welcome to the mine'; gsap.delayedCall(.32, boot); }
-    });
+
+  /* ══ GLITCH SFX — synthesised, no audio file shipped ══
+     Web Audio costs 0 KB, which matters on a loading screen, and it can be timed
+     to the clip. Browsers suspend AudioContext until a user gesture, so this
+     attempts to start immediately and otherwise fires on the first interaction. */
+  function glitchSfx() {
+    if (reduced) return () => {};
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return () => {};
+    let ctx;
+    try { ctx = new AC(); } catch (e) { return () => {}; }
+
+    // one-off noise buffer reused by every burst
+    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate);
+    const nd = noiseBuf.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+
+    const master = ctx.createGain();
+    master.gain.value = 0.16;                     // deliberately restrained
+    master.connect(ctx.destination);
+
+    // tape/VHS tear: filtered noise burst with a sweeping band
+    const tear = (t, dur, f0, f1) => {
+      const src = ctx.createBufferSource(); src.buffer = noiseBuf;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 7;
+      bp.frequency.setValueAtTime(f0, t);
+      bp.frequency.exponentialRampToValueAtTime(f1, t + dur);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(1, t + 0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(bp); bp.connect(g); g.connect(master);
+      src.start(t); src.stop(t + dur + 0.02);
+    };
+    // digital artefact: hard square blip
+    const blip = (t, dur, freq) => {
+      const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = freq;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.5, t + 0.003);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(master);
+      o.start(t); o.stop(t + dur + 0.02);
+    };
+    // power-down sweep at the end
+    const sweep = (t, dur) => {
+      const o = ctx.createOscillator(); o.type = 'sawtooth';
+      o.frequency.setValueAtTime(900, t);
+      o.frequency.exponentialRampToValueAtTime(60, t + dur);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.28, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(master);
+      o.start(t); o.stop(t + dur + 0.02);
+    };
+
+    let fired = false;
+    return () => {
+      if (fired) return; fired = true;
+      const go = () => {
+        const t = ctx.currentTime + 0.02;
+        tear(t, 0.16, 400, 5200);
+        blip(t + 0.05, 0.04, 1860);
+        tear(t + 0.30, 0.10, 3000, 700);
+        blip(t + 0.38, 0.03, 990);
+        blip(t + 0.44, 0.025, 2400);
+        tear(t + 0.72, 0.20, 800, 6000);
+        blip(t + 0.95, 0.05, 640);
+        tear(t + 1.25, 0.12, 5000, 900);
+        blip(t + 1.42, 0.03, 1500);
+        tear(t + 1.70, 0.09, 1200, 4000);
+        sweep(t + 1.95, 0.55);
+      };
+      if (ctx.state === 'suspended') ctx.resume().then(go).catch(() => {});
+      else go();
+    };
   }
+  const playGlitch = glitchSfx();
+  playGlitch();                                   // works if autoplay is permitted
+  // otherwise: fire on the very first interaction
+  ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(ev =>
+    addEventListener(ev, () => playGlitch(), { once: true, passive: true }));
+
+  if (reduced || !hasGsap) boot();
+  else gsap.delayedCall(2.5, boot);                // hold on the glitch, then wipe
 })();
