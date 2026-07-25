@@ -145,6 +145,27 @@
   };
   dragify($('#rail')); dragify($('#railS'));
 
+  /* ══ GLITCHING LOGO (header + footer) ══
+     Masked clip replaces the static mark. Only reveals once it can actually play,
+     so a blocked/missing clip leaves the crisp PNG in place. The footer instance
+     is paused while off screen so it never decodes for nothing. */
+  $$('[data-glogo]').forEach(wrap => {
+    const v = $('.glogo__v', wrap);
+    if (!v || reduced) return;                       // reduced motion keeps the PNG
+    const reveal = () => wrap.classList.add('on');
+    v.addEventListener('loadeddata', reveal, { once: true });
+    v.addEventListener('playing', reveal, { once: true });
+    v.addEventListener('error', () => wrap.classList.remove('on'));
+    const kick = () => { const p = v.play(); if (p && p.catch) p.catch(() => {}); };
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) { if (!v.src && v.querySelector('source')) v.load(); kick(); }
+        else if (!v.paused) v.pause();
+      }, { rootMargin: '15% 0px', threshold: 0.01 }).observe(wrap);
+    } else kick();
+    document.addEventListener('visibilitychange', () => { if (document.hidden) v.pause(); });
+  });
+
   /* ══ RAIL ARROW BUTTONS ══ */
   const railById = id => document.getElementById(id);
   const syncRnav = () => $$('.rnav__b').forEach(b => {
@@ -671,17 +692,20 @@ void main() {
     if (reduced) return () => {};
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return () => {};
-    let ctx;
-    try { ctx = new AC(); } catch (e) { return () => {}; }
+    let ctx, noiseBuf, master;
 
-    // one-off noise buffer reused by every burst
-    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate);
-    const nd = noiseBuf.getChannelData(0);
-    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
-
-    const master = ctx.createGain();
-    master.gain.value = 0.16;                     // deliberately restrained
-    master.connect(ctx.destination);
+    /* built lazily on first play: never create an AudioContext that may go unused */
+    const init = () => {
+      if (ctx) return true;
+      try { ctx = new AC(); } catch (e) { return false; }
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate);
+      const nd = noiseBuf.getChannelData(0);
+      for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+      master = ctx.createGain();
+      master.gain.value = 0.16;                   // deliberately restrained
+      master.connect(ctx.destination);
+      return true;
+    };
 
     // tape/VHS tear: filtered noise burst with a sweeping band
     const tear = (t, dur, f0, f1) => {
@@ -720,7 +744,9 @@ void main() {
 
     let fired = false;
     return () => {
-      if (fired) return; fired = true;
+      if (fired) return;
+      if (!init()) return;
+      fired = true;
       const go = () => {
         const t = ctx.currentTime + 0.02;
         tear(t, 0.16, 400, 5200);
