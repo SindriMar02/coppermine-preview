@@ -84,15 +84,53 @@
     const ugc = (CM.ugc || []).slice(0, 12);
     const cols = [[], [], []];
     ugc.forEach((u, i) => cols[i % 3].push(u));
-    const clip = u => `<figure class="seen__card"><video src="${u}" muted loop playsinline preload="metadata" tabindex="-1"></video></figure>`;
+    // preload="none" + lazy src: avoids N metadata fetches on load
+    const clip = u => `<figure class="seen__card"><video data-src="${u}" muted loop playsinline preload="none" disablepictureinpicture tabindex="-1"></video></figure>`;
     seenWall.innerHTML = cols.map((col, ci) => `<div class="seen__col ${ci % 2 ? 'seen__col--down' : 'seen__col--up'}">${col.map(clip).join('') + col.map(clip).join('')}</div>`).join('');
-    // play only while the section is on screen (saves bandwidth + CPU)
+
     const clips = $$('.seen__card video', seenWall);
-    const playAll = on => clips.forEach(v => { if (on) { const p = v.play(); if (p && p.catch) p.catch(() => {}); } else v.pause(); });
-    if (reduced) { /* leave paused under reduced motion */ }
-    else if ('IntersectionObserver' in window) {
-      new IntersectionObserver(([e]) => playAll(e.isIntersecting), { threshold: .05 }).observe($('#seen'));
-    } else playAll(true);
+    const sectionEl = $('#seen');
+    let sectionIn = false;
+
+    const start = v => {
+      if (!v.src) v.src = v.dataset.src;      // attach source only when needed
+      const p = v.play(); if (p && p.catch) p.catch(() => {});
+    };
+    const stop = v => { if (!v.paused) v.pause(); };
+
+    if (reduced || !('IntersectionObserver' in window)) {
+      // reduced motion: show a still first frame, never autoplay a wall of video
+      clips.forEach(v => { if (!v.src) v.src = v.dataset.src; });
+    } else {
+      /* Only the cards actually on screen may decode. IntersectionObserver is
+         unreliable inside the wall's 3D transform (it over-reports), so this
+         does a cheap geometry pass on a 250ms timer instead: 18 rect reads,
+         nowhere near a per-frame cost, and it never touches the scroll event. */
+      /* Hard cap on simultaneous decodes. A single 300ms timer drives everything:
+         one rect read decides if the wall is near the viewport, and only then does
+         it rank cards and play the closest few. IntersectionObserver is NOT used
+         here because it over-reports inside the wall's 3D transform. */
+      const MAX_PLAYING = 6;
+      const visPass = () => {
+        if (document.hidden) { clips.forEach(stop); return; }
+        const vh = innerHeight;
+        const sr = sectionEl.getBoundingClientRect();
+        const near = sr.bottom > -200 && sr.top < vh + 200;
+        window.__cmShaderPaused = near;          // shader yields the GPU to the wall
+        if (!near) { if (sectionIn) { clips.forEach(stop); sectionIn = false; } return; }
+        sectionIn = true;
+        const vis = [];
+        clips.forEach(v => {
+          const r = v.getBoundingClientRect();
+          if (r.bottom > -60 && r.top < vh + 60 && r.width > 0) vis.push({ v, d: Math.abs((r.top + r.bottom) / 2 - vh / 2) });
+          else stop(v);
+        });
+        vis.sort((a, b) => a.d - b.d);           // nearest to centre wins the slots
+        vis.forEach((o, i) => (i < MAX_PLAYING ? start(o.v) : stop(o.v)));
+      };
+      setInterval(visPass, 300);
+      visPass();
+    }
   }
 
   /* ── drag rails ── */
@@ -540,11 +578,17 @@ void main() {
       canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h);
     };
     resize(); addEventListener('resize', resize, { passive: true });
-    const start = performance.now();
+    const t0 = performance.now();
+    let last = 0;
     const render = now => {
-      gl.uniform4f(U.scene, canvas.width, canvas.height, ((now - start) / 1000) * P.timeScale, P.colorCount);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
       requestAnimationFrame(render);
+      // skip work entirely while the video wall owns the GPU, or when tab is hidden
+      if (window.__cmShaderPaused || document.hidden) return;
+      // cap to ~40fps: this is a slow ambient gradient, 60fps buys nothing visually
+      if (now - last < 25) return;
+      last = now;
+      gl.uniform4f(U.scene, canvas.width, canvas.height, ((now - t0) / 1000) * P.timeScale, P.colorCount);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
     requestAnimationFrame(render);
   }
