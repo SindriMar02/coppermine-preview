@@ -50,7 +50,12 @@
   <div class="nav__end">
     <button class="nav__link" id="searchBtn">Search</button>
     <button class="nav__link" id="bagBtn">Bag <span id="bagCount">(0)</span></button>
-    <button class="nav__burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    <!-- Same toggle as sndr-studio: MENU/CLOSE text roller + plus icon that spins to an X -->
+    <button class="nav__burger sm-toggle" id="burger" aria-label="Menu" aria-expanded="false"
+            data-label-open="Menu" data-label-close="Close">
+      <span class="sm-toggle-textwrap" aria-hidden="true"><span class="sm-toggle-textinner"><span class="sm-toggle-line">Menu</span></span></span>
+      <span class="sm-icon" aria-hidden="true"><span class="sm-icon-line"></span><span class="sm-icon-line sm-icon-line-v"></span></span>
+    </button>
   </div>
 </header>
 

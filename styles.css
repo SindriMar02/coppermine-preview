@@ -79,13 +79,17 @@ body.ready .load__mark{transform:translateY(-14px) scale(.985);opacity:.85;trans
 .nav__mid a,.nav__link{font-family:var(--ff-m);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#fff;transition:opacity .3s;opacity:.85}
 .nav__mid a:hover,.nav__link:hover{opacity:1}
 .nav__end{display:flex;gap:20px;align-items:center;justify-self:end}
-/* 44x44 hit area (was 26x13, far below the minimum tap target) */
-.nav__burger{display:none;flex-direction:column;justify-content:center;align-items:flex-end;gap:4px;
-  width:44px;height:44px;margin-right:-8px}
-.nav__burger span{display:block;width:24px;height:1.5px;background:#fff;transition:transform .4s var(--ease),opacity .3s}
-body.menu-open .nav__burger span:nth-child(1){transform:translateY(5.5px) rotate(45deg)}
-body.menu-open .nav__burger span:nth-child(2){opacity:0}
-body.menu-open .nav__burger span:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
+/* ── Menu toggle, ported from sndr-studio: text roller + plus that spins to an X.
+      GSAP drives the icon rotation and the label roll (see app.js). ── */
+.nav__burger{display:none;align-items:center;gap:.45rem;height:44px;padding:0 2px;margin-right:-2px;
+  background:transparent;border:none;cursor:pointer;color:#fff;
+  font-family:var(--ff-m);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.sm-toggle-textwrap{position:relative;display:inline-block;height:1em;overflow:hidden;white-space:nowrap}
+.sm-toggle-textinner{display:flex;flex-direction:column;line-height:1}
+.sm-toggle-line{display:block;height:1em;line-height:1}
+.sm-icon{position:relative;width:12px;height:12px;flex:0 0 12px;display:inline-flex;will-change:transform}
+.sm-icon-line{position:absolute;left:50%;top:50%;width:100%;height:2px;background:currentColor;border-radius:2px;
+  transform:translate(-50%,-50%);will-change:transform}
 
 /* ══ MOBILE MENU ══ */
 .menu{position:fixed;inset:0;z-index:99;background:var(--bg);display:flex;flex-direction:column;justify-content:center;gap:2px;padding:0 var(--pad);clip-path:inset(0 0 100% 0);transition:clip-path .8s var(--ease);pointer-events:none}

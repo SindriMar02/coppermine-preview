@@ -73,8 +73,8 @@
     const specimens = pick(CM.featuredNew).slice(1, 11);
     let e = 0, frames = [];
     specimens.forEach((p, i) => {
-      if (i % 3 === 0) frames.push(`<figure class="pan__i pan__i--tall"><img src="${px(editorial[e++ % editorial.length], 1200)}" alt="Coppermine FW’25" loading="lazy"/><figcaption class="pan__cap">Reykjavík — FW’25</figcaption></figure>`);
-      frames.push(`<figure class="pan__i pan__i--prod"><img src="${px(p.img[0], 760)}" alt="${p.t}" loading="lazy"/><figcaption class="pan__cap">${p.t}</figcaption></figure>`);
+      if (i % 3 === 0) frames.push(`<figure class="pan__i pan__i--tall"><img src="${px(editorial[e++ % editorial.length], 900)}" alt="Coppermine FW’25" loading="lazy"/><figcaption class="pan__cap">Reykjavík — FW’25</figcaption></figure>`);
+      frames.push(`<figure class="pan__i pan__i--prod"><img src="${px(p.img[0], 620)}" alt="${p.t}" loading="lazy"/><figcaption class="pan__cap">${p.t}</figcaption></figure>`);
     });
     panTrack.insertAdjacentHTML('beforeend', frames.join(''));
   }
@@ -267,9 +267,68 @@
 
   const nf = $('#newsForm');
   if (nf) nf.addEventListener('submit', e => { e.preventDefault(); const v = $('#newsEmail').value.trim(), m = $('#newsMsg'); const ok = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v); m.textContent = ok ? 'You’re in. Welcome to the inside.' : 'Enter a valid email.'; if (ok) nf.reset(); });
+  /* ══ MOBILE MENU + the sndr-studio toggle animation ══ */
   const burger = $('#burger'), menu = $('#menu');
-  const setMenu = o => { document.body.classList.toggle('menu-open', o); burger.setAttribute('aria-expanded', o); menu.setAttribute('aria-hidden', !o); };
-  if (burger) { burger.addEventListener('click', () => setMenu(!document.body.classList.contains('menu-open'))); $$('#menu a').forEach(a => a.addEventListener('click', () => setMenu(false))); addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); }); }
+  if (burger) {
+    const icon = $('.sm-icon', burger), lineH = $('.sm-icon-line:not(.sm-icon-line-v)', burger),
+          lineV = $('.sm-icon-line-v', burger), textInner = $('.sm-toggle-textinner', burger);
+    const labelOpen = burger.dataset.labelOpen || 'Menu', labelClose = burger.dataset.labelClose || 'Close';
+    let spin, roll, primed = false;
+    const prime = () => {
+      if (primed || !window.gsap || !lineV) return; primed = true;
+      gsap.set(lineH, { rotate: 0, transformOrigin: '50% 50%' });
+      gsap.set(lineV, { rotate: 90, transformOrigin: '50% 50%' });
+      gsap.set(icon, { rotate: 0, transformOrigin: '50% 50%' });
+    };
+
+    /* plus -> X: long 225deg spin opening, quick unwind closing */
+    const animateIcon = opening => {
+      if (!icon || !window.gsap) return;
+      prime(); spin && spin.kill();
+      if (reduced) { gsap.set(icon, { rotate: opening ? 225 : 0 }); return; }
+      spin = opening
+        ? gsap.to(icon, { rotate: 225, duration: .8, ease: 'power4.out', overwrite: 'auto' })
+        : gsap.to(icon, { rotate: 0, duration: .35, ease: 'power3.inOut', overwrite: 'auto' });
+    };
+
+    /* MENU/CLOSE roller: stack alternating lines, then roll to the last */
+    const animateText = opening => {
+      if (!textInner) return;
+      roll && roll.kill();
+      const current = opening ? labelOpen : labelClose, target = opening ? labelClose : labelOpen;
+      const put = words => { textInner.textContent = ''; words.forEach(w => { const s = document.createElement('span'); s.className = 'sm-toggle-line'; s.textContent = w; textInner.appendChild(s); }); };
+      if (reduced || !window.gsap) { put([target]); return; }
+      const seq = [current]; let last = current;
+      for (let i = 0; i < 3; i++) { last = last === labelOpen ? labelClose : labelOpen; seq.push(last); }
+      if (last !== target) seq.push(target);
+      seq.push(target);
+      put(seq);
+      gsap.set(textInner, { yPercent: 0 });
+      roll = gsap.to(textInner, { yPercent: -((seq.length - 1) / seq.length) * 100, duration: .9, ease: 'power4.out' });
+    };
+
+    const setMenu = o => {
+      document.body.classList.toggle('menu-open', o);
+      burger.setAttribute('aria-expanded', String(o));
+      burger.setAttribute('aria-label', o ? labelClose : labelOpen);
+      menu.setAttribute('aria-hidden', String(!o));
+      animateIcon(o); animateText(o);
+    };
+
+    burger.addEventListener('click', () => setMenu(!document.body.classList.contains('menu-open')));
+    /* Menu links navigate explicitly: the generic anchor handler relied on
+       lenis.scrollTo, which silently no-ops when Lenis is stopped or starved,
+       so these links did nothing at all. */
+    $$('#menu a').forEach(a => a.addEventListener('click', e => {
+      const id = a.getAttribute('href');
+      if (!id || id.length < 2) return;
+      e.preventDefault(); e.stopPropagation();
+      const t = document.querySelector(id);
+      setMenu(false);
+      setTimeout(() => goTo(t), 130);        // let the panel start closing first
+    }));
+    addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('menu-open')) setMenu(false); });
+  }
 
   /* ── film sound toggle (default muted; auto-mutes when scrolled away) ── */
   const reel = $('#reel'), sndBtn = $('#sndToggle'), reelYt = $('#reelYt');
@@ -285,16 +344,45 @@
       sndBtn.querySelector('.snd__label').textContent = on ? 'Sound on' : 'Sound off';
     };
     sndBtn.addEventListener('click', () => setSound(!soundOn));
-    if ('IntersectionObserver' in window) new IntersectionObserver(([e]) => { if (!e.isIntersecting && soundOn) setSound(false); }, { threshold: .2 }).observe(reel);
+    /* Mobile browsers frequently ignore the iframe's autoplay= param, so ask the
+       player directly (muted playback is permitted) whenever the film scrolls in. */
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) { post('mute'); post('playVideo'); }
+        else { if (soundOn) setSound(false); post('pauseVideo'); }
+      }, { threshold: .2 }).observe(reel);
+    }
+    // and once the player is ready, in case it loaded already in view
+    reelYt.addEventListener('load', () => { post('mute'); post('playVideo'); });
   }
 
-  /* ── anchor smooth scroll ── */
+  /* ── anchor navigation ──
+     Always restarts Lenis first (it may have been stopped by the bag) and hard
+     falls back to a native scroll if the smooth scroll never lands. */
   let lenis;
-  $$('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
-    const id = a.getAttribute('href'); if (id.length < 2) return;
-    const t = document.querySelector(id); if (!t) return; e.preventDefault();
-    if (lenis) lenis.scrollTo(t, { offset: -40, duration: 1.2 }); else t.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
-  }));
+  function goTo(target) {
+    if (!target) return;
+    const startY = window.scrollY;
+    const y = Math.max(0, target.getBoundingClientRect().top + startY - 40);
+    if (lenis && !reduced) { try { lenis.start(); lenis.scrollTo(y, { duration: 1.1 }); } catch (e) { window.scrollTo({ top: y }); } }
+    else window.scrollTo({ top: y, behavior: reduced ? 'auto' : 'smooth' });
+    /* Rescue only a genuinely dead scroll: if we have barely budged after 700ms
+       the smooth scroll never engaged. Checking distance-to-target instead would
+       wrongly interrupt a long but working animation. */
+    setTimeout(() => {
+      if (Math.abs(window.scrollY - startY) < 40 && Math.abs(window.scrollY - y) > 240) {
+        window.scrollTo({ top: y, behavior: 'auto' });
+      }
+    }, 700);
+  }
+  $$('a[href^="#"]').forEach(a => {
+    if (a.closest('#menu')) return;                 // menu links handle themselves
+    a.addEventListener('click', e => {
+      const id = a.getAttribute('href'); if (!id || id.length < 2) return;
+      const t = document.querySelector(id); if (!t) return;
+      e.preventDefault(); goTo(t);
+    });
+  });
 
   /* ── nav hide on scroll-down ── */
   const nav = $('#nav'); let lastY = 0;
