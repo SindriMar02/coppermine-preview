@@ -27,15 +27,13 @@
 
   <div class="load__mid">
     <div class="load__mark">
-      <!-- Y2K glitch reveal. Black frame is knocked out with mix-blend-mode:screen,
-           so only the glitching wordmark shows over the loader. Falls back to the
-           masked copper fill below if the video is missing or cannot play. -->
-      <video class="load__glitch" id="loadGlitch" muted loop playsinline preload="auto" aria-hidden="true">
+      <!-- Y2K glitch reveal. The clip's black frame is knocked out with
+           mix-blend-mode:screen so only the glitching wordmark shows.
+           The still logo underneath is shown ONLY if the clip cannot play. -->
+      <img class="load__still" id="loadStill" src="assets/logo.png" alt="Coppermine" />
+      <video class="load__glitch" id="loadGlitch" muted loop playsinline autoplay preload="auto" aria-hidden="true">
         <source src="assets/logo-glitch.mp4" type="video/mp4" />
       </video>
-      <span class="load__ghost" aria-hidden="true"></span>
-      <span class="load__fill" id="loadFill" aria-hidden="true"></span>
-      <img class="load__sronly" src="assets/logo.png" alt="Coppermine" />
     </div>
   </div>
 

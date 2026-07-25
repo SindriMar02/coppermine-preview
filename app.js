@@ -643,19 +643,28 @@ void main() {
   let booted = false;
   const boot = () => { if (booted) return; booted = true; document.body.classList.add('ready'); shaderBackground(); choreograph(); heroIn(); if (hasGsap) ScrollTrigger.refresh(); };
   setTimeout(boot, 3200);
-  const pct = $('#loadPct'), fill = $('#loadFill'), bar = $('#loadBar'), state = $('#loadState');
+  const pct = $('#loadPct'), bar = $('#loadBar'), state = $('#loadState');
 
-  /* Y2K glitch reveal: only switch to the video once it actually plays, so a
-     missing/blocked file silently falls back to the masked copper fill. */
-  const glitch = $('#loadGlitch'), loadEl = $('#load');
-  if (glitch && !reduced) {
-    glitch.addEventListener('playing', () => loadEl && loadEl.classList.add('glitch-on'), { once: true });
-    glitch.addEventListener('error', () => loadEl && loadEl.classList.remove('glitch-on'));
-    const p = glitch.play(); if (p && p.catch) p.catch(() => {});
+  /* Y2K glitch reveal. Inline opacity, set the moment the clip renders a frame,
+     so no stylesheet rule can win over it. Still logo stays if it cannot play. */
+  const glitch = $('#loadGlitch'), still = $('#loadStill');
+  if (glitch) {
+    const showGlitch = () => {
+      if (reduced) return;                       // reduced motion keeps the still
+      glitch.style.opacity = '1';
+      if (still) still.style.opacity = '0';
+    };
+    glitch.addEventListener('loadeddata', showGlitch, { once: true });
+    glitch.addEventListener('playing', showGlitch, { once: true });
+    if (glitch.readyState >= 2) showGlitch();    // already buffered from cache
+    glitch.addEventListener('error', () => {     // clip unavailable: keep the still
+      glitch.style.opacity = '0';
+      if (still) still.style.opacity = '1';
+    });
+    if (!reduced) { const p = glitch.play(); if (p && p.catch) p.catch(() => {}); }
   }
   const paint = v => {
     if (pct) pct.textContent = String(Math.min(100, Math.round(v))).padStart(2, '0');
-    if (fill) fill.style.clipPath = `inset(${(100 - v).toFixed(2)}% 0 0 0)`;
     if (bar) bar.style.width = v.toFixed(2) + '%';
   };
   if (reduced || !hasGsap) { paint(100); boot(); }

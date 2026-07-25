@@ -39,31 +39,23 @@ main,.foot{position:relative;z-index:1}
 .bars{position:fixed;inset:0;z-index:0;pointer-events:none;display:block;width:100%;height:100%;opacity:.5}
 
 /* ══ PRELOADER — copper rises through the wordmark ══ */
-.load{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;
+/* Pure black, deliberately: it matches the glitch clip's own black background
+   exactly, so the video frame can never read as a visible rectangle. */
+.load{position:fixed;inset:0;z-index:200;background:#000;display:flex;flex-direction:column;
   justify-content:space-between;padding:calc(var(--pad) * .8) var(--pad);overflow:hidden;
   clip-path:inset(0 0 0 0);transition:clip-path 1.05s var(--ease)}
-.load::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(120% 80% at 50% 62%,rgba(228,96,28,.09),transparent 62%)}
 .load__top{display:flex;justify-content:space-between;gap:16px;position:relative;z-index:2}
 
 /* the mark: two stacked layers masked by their real logo */
 .load__mid{flex:1;display:grid;place-items:center;position:relative;z-index:2}
 .load__mark{position:relative;width:min(76vw,760px);aspect-ratio:2000/443}
-.load__ghost,.load__fill{position:absolute;inset:0;
-  -webkit-mask:url("assets/logo.png") center/contain no-repeat;
-          mask:url("assets/logo.png") center/contain no-repeat}
-.load__ghost{background:rgba(242,234,224,.12)}
-/* Y2K glitch video: black knocked out via screen blend, sits over the mask layers.
-   .glitch-on is set by JS only once the video is confirmed playable. */
-.load__glitch{position:absolute;inset:-6% -4%;width:108%;height:112%;object-fit:contain;
-  mix-blend-mode:screen;opacity:0;transition:opacity .5s var(--ease);pointer-events:none;z-index:3}
-.load.glitch-on .load__glitch{opacity:1}
-.load.glitch-on .load__ghost{opacity:0}
-.load.glitch-on .load__fill{opacity:.55;mix-blend-mode:color-dodge}
-/* fill reveals bottom-up: deep copper at the base, hot at the crest */
-.load__fill{background:linear-gradient(180deg,#f0873a 0%,var(--accent) 48%,#8f3d12 100%);
-  clip-path:inset(100% 0 0 0)}
-.load__sronly{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+/* still logo: the fallback if the glitch clip cannot play. JS hides it on play. */
+.load__still{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+  transition:opacity .35s var(--ease)}
+/* Y2K glitch clip: black knocked out via screen blend. Opacity is driven inline
+   by JS (not by a class) so nothing can override it. */
+.load__glitch{position:absolute;inset:-5% -3%;width:106%;height:110%;object-fit:contain;
+  mix-blend-mode:screen;opacity:0;transition:opacity .45s var(--ease);pointer-events:none;z-index:3}
 
 .load__bot{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;position:relative;z-index:2}
 .load__count{display:flex;align-items:flex-start;font-family:var(--ff-d);font-weight:500;
