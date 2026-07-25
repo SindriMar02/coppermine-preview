@@ -599,9 +599,9 @@ void main() {
     const u = n => gl.getUniformLocation(prog, n);
     const U = { colors: u('u_colors'), scene: u('u_scene'), shape: u('u_shape'), surface: u('u_surface'), finish: u('u_finish'), transform: u('u_transform'), space: u('u_space'), cursor: u('u_cursor') };
     // Coppermine palette: obsidian field, one molten-copper band, grain
-    const dark = [0.032, 0.022, 0.016];
-    const colors = [[0.05, 0.035, 0.026], [0.088, 0.052, 0.03], [0.34, 0.15, 0.06], dark, dark, dark, dark, dark];
-    const P = { colorCount: 4, scale: 1.92, intensity: 0.68, paramA: 0.28, warp: 0.06, detail: 2.624, contrast: 0.98, brightness: -0.035, saturation: 0.62, hue: 0, vignette: 0.34, blur: 0, grain: 0.045, seed: 1, rotate: 1.9373, drift: 0.02, oklab: 0, timeScale: 0.78 };
+    const dark = [0.04, 0.027, 0.019];
+    const colors = [[0.066, 0.045, 0.032], [0.13, 0.075, 0.042], [0.5, 0.22, 0.085], dark, dark, dark, dark, dark];
+    const P = { colorCount: 4, scale: 1.92, intensity: 0.74, paramA: 0.3, warp: 0.07, detail: 2.624, contrast: 1.0, brightness: -0.008, saturation: 0.86, hue: 0, vignette: 0.3, blur: 0, grain: 0.055, seed: 1, rotate: 1.9373, drift: 0.02, oklab: 0, timeScale: 0.82 };
     gl.uniform3fv(U.colors, new Float32Array(colors.flat()));
     gl.uniform4f(U.shape, P.scale, P.intensity, P.paramA, P.warp);
     gl.uniform4f(U.surface, P.detail, P.contrast, P.brightness, P.saturation);
