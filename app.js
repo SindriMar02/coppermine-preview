@@ -79,6 +79,16 @@
     panTrack.insertAdjacentHTML('beforeend', frames.join(''));
   }
 
+  /* ── who currently owns the GPU ──
+     Both the video wall and the film are heavy, and they are adjacent sections, so
+     they are on screen together during the hand-off. A single boolean assignment
+     from one of them would clobber the other's request; this ORs them instead. */
+  const heavy = new Set();
+  const setHeavy = (who, on) => {
+    if (on) heavy.add(who); else heavy.delete(who);
+    window.__cmShaderPaused = heavy.size > 0;
+  };
+
   /* ── as-seen-on wall: their REAL social videos (prototype portion, not all 243) ── */
   const seenWall = $('#seenWall');
   if (seenWall) {
@@ -135,8 +145,15 @@
         const vh = innerHeight;
         const sr = sectionEl.getBoundingClientRect();
         const near = sr.bottom > -200 && sr.top < vh + 200;
-        window.__cmShaderPaused = near;          // shader yields the GPU to the wall
-        if (!near) { if (sectionIn) { clips.forEach(stop); sectionIn = false; } return; }
+        setHeavy('wall', near);                  // shader yields the GPU to the wall
+        /* The film sits directly below this wall and is far more expensive (a whole
+           cross-origin player). Once it owns the viewport the wall stops decoding
+           entirely rather than the two fighting over the main thread. */
+        if (!near || window.__cmReelBusy) {
+          if (sectionIn) { clips.forEach(stop); sectionIn = false; }
+          if (window.__cmReelBusy) setHeavy('wall', false);
+          return;
+        }
         sectionIn = true;
         const vis = [];
         clips.forEach(v => {
@@ -330,30 +347,76 @@
     addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('menu-open')) setMenu(false); });
   }
 
-  /* ── film sound toggle (default muted; auto-mutes when scrolled away) ── */
-  const reel = $('#reel'), sndBtn = $('#sndToggle'), reelYt = $('#reelYt');
-  if (reel && sndBtn && reelYt) {
-    let soundOn = false;
-    const post = (func, args = []) => { try { reelYt.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args }), '*'); } catch (e) {} };
-    const setSound = on => {
+  /* ── film: mount the player only around the section, and unmount it after ──
+     A YouTube embed is by far the most expensive thing on this page. Left in the
+     markup it keeps its own timers and compositor alive for the entire visit, and
+     because Lenis drives scrolling from rAF, that cost shows up as scroll stutter
+     rather than just a lower frame rate. So the iframe exists only while the film
+     is near the viewport; the rest of the time the section is a single poster.
+     Distances are generous (mount ~1 viewport out) so it is always ready by the
+     time it is actually on screen. */
+  const reel = $('#reel'), sndBtn = $('#sndToggle'), reelBox = $('#reelYt');
+  if (reel && sndBtn && reelBox) {
+    const VID = reelBox.dataset.yt;
+    let frame = null, soundOn = false;
+
+    const post = (func, args = []) => {
+      if (!frame) return;
+      try { frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args }), '*'); } catch (e) {}
+    };
+
+    const mount = () => {
+      if (frame) return;
+      frame = document.createElement('iframe');
+      frame.title = 'Coppermine film';
+      frame.allow = 'autoplay; encrypted-media';
+      frame.setAttribute('frameborder', '0');
+      // youtube-nocookie keeps the preview free of tracking cookies it does not need
+      frame.src = `https://www.youtube-nocookie.com/embed/${VID}?enablejsapi=1&autoplay=1&mute=1&loop=1&playlist=${VID}&controls=0&modestbranding=1&playsinline=1&rel=0`;
+      frame.addEventListener('load', () => { post('mute'); post('playVideo'); });
+      reelBox.appendChild(frame);
+      reelBox.classList.add('mounted');
+    };
+
+    const unmount = () => {
+      if (!frame) return;
+      if (soundOn) setSound(false);
+      frame.remove();                 // drops the player, its JS and its layer
+      frame = null;
+      reelBox.classList.remove('mounted');
+    };
+
+    function setSound(on) {
       soundOn = on;
       post(on ? 'unMute' : 'mute');
       if (on) post('setVolume', [100]);
       reel.classList.toggle('on', on);
       sndBtn.setAttribute('aria-pressed', String(on));
       sndBtn.querySelector('.snd__label').textContent = on ? 'Sound on' : 'Sound off';
-    };
-    sndBtn.addEventListener('click', () => setSound(!soundOn));
-    /* Mobile browsers frequently ignore the iframe's autoplay= param, so ask the
-       player directly (muted playback is permitted) whenever the film scrolls in. */
-    if ('IntersectionObserver' in window) {
-      new IntersectionObserver(([e]) => {
-        if (e.isIntersecting) { post('mute'); post('playVideo'); }
-        else { if (soundOn) setSound(false); post('pauseVideo'); }
-      }, { threshold: .2 }).observe(reel);
     }
-    // and once the player is ready, in case it loaded already in view
-    reelYt.addEventListener('load', () => { post('mute'); post('playVideo'); });
+    sndBtn.addEventListener('click', () => { if (!frame) mount(); setSound(!soundOn); });
+
+    /* One rect read on the same cheap 300ms cadence the wall uses. IntersectionObserver
+       would do, but this also has to publish __cmReelBusy for the wall to read. */
+    const reelPass = () => {
+      // reduced motion: never autoplay a full-bleed film. The poster stands in until
+      // the visitor asks for sound, which mounts the player deliberately.
+      if (reduced) return;
+      if (document.hidden) { if (soundOn) setSound(false); post('pauseVideo'); return; }
+      const vh = innerHeight;
+      const r = reel.getBoundingClientRect();
+      const near = r.bottom > -vh && r.top < vh * 2;        // mount window
+      const onScreen = r.bottom > vh * .25 && r.top < vh * .75;
+
+      window.__cmReelBusy = onScreen;   // the wall stands down while the film plays
+      setHeavy('reel', onScreen);       // and so does the ambient shader
+
+      if (near) { mount(); if (onScreen) post('playVideo'); else post('pauseVideo'); }
+      else unmount();
+    };
+    setInterval(reelPass, 300);
+    reelPass();
+    document.addEventListener('visibilitychange', () => { if (document.hidden) post('pauseVideo'); });
   }
 
   /* ── anchor navigation ──
