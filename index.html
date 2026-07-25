@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>COPPERMINE — Reykjavík streetwear · Fall / Winter ’25</title>
+<meta name="description" content="Coppermine. Reykjavík streetwear. Fall / Winter ’25. Somerset · SIXHUNNA. Laugavegur 44, 101 Reykjavík. As seen on." />
+<meta name="theme-color" content="#100b08" />
+<meta name="robots" content="noindex, nofollow" />
+<link rel="preconnect" href="https://cdn.shopify.com" crossorigin />
+<link rel="preload" href="assets/logo.png" as="image" />
+<link rel="preload" href="assets/fonts/Humane.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="assets/fonts/SpaceMono-Regular.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ░ VERTICAL-BARS BACKGROUND (21st.dev uilayout/vertical-bars, ported to vanilla) ░ -->
+<canvas class="bars" id="bars" aria-hidden="true"></canvas>
+
+<!-- ░ PRELOADER — copper rises through their wordmark ░ -->
+<div class="load" id="load">
+  <div class="load__top">
+    <span class="mono">Coppermine — Reykjavík, Iceland</span>
+    <span class="mono">Fall / Winter ’25</span>
+  </div>
+
+  <div class="load__mid">
+    <div class="load__mark">
+      <span class="load__ghost" aria-hidden="true"></span>
+      <span class="load__fill" id="loadFill" aria-hidden="true"></span>
+      <img class="load__sronly" src="assets/logo.png" alt="Coppermine" />
+    </div>
+  </div>
+
+  <div class="load__bot">
+    <div class="load__count"><span id="loadPct">00</span><i>%</i></div>
+    <span class="mono load__state" id="loadState">Smelting the collection</span>
+  </div>
+
+  <div class="load__bar" aria-hidden="true"><span id="loadBar"></span></div>
+</div>
+
+<!-- ░ NAV ░ -->
+<header class="nav" id="nav">
+  <nav class="nav__mid" aria-label="Main">
+    <a href="#ny">New in</a>
+    <a href="#flokkar">Shop</a>
+    <a href="#linur">Collections</a>
+    <a href="#film">Lookbook</a>
+  </nav>
+  <a href="#top" class="nav__brand" aria-label="Coppermine"><img src="assets/logo.png" alt="Coppermine" /></a>
+  <div class="nav__end">
+    <button class="nav__link" id="searchBtn">Search</button>
+    <button class="nav__link" id="bagBtn">Bag <span id="bagCount">(0)</span></button>
+    <button class="nav__burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- ░ MOBILE MENU ░ -->
+<div class="menu" id="menu" aria-hidden="true">
+  <a href="#ny"><i>01</i>New in</a>
+  <a href="#flokkar"><i>02</i>Shop</a>
+  <a href="#linur"><i>03</i>Collections</a>
+  <a href="#film"><i>04</i>Lookbook</a>
+  <div class="menu__foot"><span>Laugavegur 44 · 101 Reykjavík</span><a href="https://instagram.com/copperminervk" target="_blank" rel="noopener">@copperminervk</a></div>
+</div>
+
+<main id="top">
+
+  <!-- ░ HERO ░ -->
+  <section class="hero">
+    <div class="hero__head">
+      <span class="mono">Based in Reykjavík, Iceland</span>
+      <span class="mono">Fall / Winter ’25</span>
+    </div>
+    <div class="hero__stage">
+      <img class="hero__fig" id="heroFig" alt="Coppermine Fall / Winter ’25" fetchpriority="high"
+           src="https://www.coppermine.is/cdn/shop/files/N4A9004.jpg?v=1783658085&width=1600" />
+      <h1 class="hero__word">Fall<br>winter ’25</h1>
+    </div>
+    <div class="hero__cta">
+      <span class="mono hero__tag">Reykjavík streetwear — Laugavegur 44</span>
+      <a href="#ny" class="link">[ Shop new arrivals ]</a>
+    </div>
+  </section>
+
+  <!-- ░ MARQUEE ░ -->
+  <div class="marq" aria-hidden="true">
+    <div class="marq__t" id="marq">
+      <span>New arrivals</span><em>·</em><span>Somerset var að lenda</span><em>·</em>
+      <span>Free exchanges</span><em>·</em><span>As seen on</span><em>·</em>
+      <span>SIXHUNNA</span><em>·</em>
+    </div>
+  </div>
+
+  <!-- ░ 01 NEW ARRIVALS ░ -->
+  <section class="ny" id="ny">
+    <div class="head">
+      <span class="head__n">01.</span>
+      <h2 class="head__t">New arrivals</h2>
+      <div class="head__end">
+        <div class="rnav">
+          <button class="rnav__b" data-rail="rail" data-dir="-1" aria-label="Scroll left">←</button>
+          <button class="rnav__b" data-rail="rail" data-dir="1" aria-label="Scroll right">→</button>
+        </div>
+        <a href="#" class="link">[ View all ]</a>
+      </div>
+    </div>
+    <div class="rail" id="rail" tabindex="0" aria-label="New arrivals"><div class="rail__t" id="railT"></div></div>
+  </section>
+
+  <!-- ░ 02 CATEGORIES — wayfinding sits early so users can self-direct ░ -->
+  <section class="flokkar" id="flokkar">
+    <div class="head">
+      <span class="head__n">02.</span>
+      <h2 class="head__t">Shop by category</h2>
+      <div class="head__end"><span class="mono">Four categories</span></div>
+    </div>
+    <div class="rolls" id="cats"></div>
+  </section>
+
+  <!-- ░ 03 SOMERSET — campaign visual sits WITH its products ░ -->
+  <section class="camp" id="camp">
+    <div class="camp__frame" id="campFrame">
+      <img class="camp__img" alt="Somerset campaign" src="https://www.coppermine.is/cdn/shop/files/N4A8891.jpg?v=1783649858&width=2000" />
+    </div>
+    <div class="camp__over">
+      <span class="mono">03. — Somerset ’25</span>
+      <p class="camp__line">Somerset<br>var að<br>lenda.</p>
+    </div>
+  </section>
+  <section class="best" id="linur">
+    <div class="head">
+      <span class="head__n"></span>
+      <h2 class="head__t">Shop Somerset</h2>
+      <div class="head__end">
+        <div class="rnav">
+          <button class="rnav__b" data-rail="railS" data-dir="-1" aria-label="Scroll left">←</button>
+          <button class="rnav__b" data-rail="railS" data-dir="1" aria-label="Scroll right">→</button>
+        </div>
+        <a href="#" class="link">[ View all ]</a>
+      </div>
+    </div>
+    <div class="rail" id="railS" tabindex="0" aria-label="Somerset"><div class="rail__t" id="railST"></div></div>
+  </section>
+
+  <!-- ░ 04 LOOKBOOK — horizontal scroll-hijack ░ -->
+  <section class="pan" id="film">
+    <div class="pan__track" id="panTrack">
+      <div class="pan__intro">
+        <div class="pan__bg"><img src="https://www.coppermine.is/cdn/shop/files/DSC6978.jpg?v=1757510313&width=1400" alt="Coppermine lookbook" loading="lazy"/></div>
+        <span class="head__n">04.</span>
+        <h2 class="pan__title">The<br>lookbook</h2>
+        <span class="mono pan__hint">Fall / Winter ’25 — keep scrolling →</span>
+      </div>
+      <!-- JS injects pan__i frames -->
+    </div>
+    <div class="pan__prog" aria-hidden="true"><span id="panProg"></span></div>
+  </section>
+
+  <!-- ░ 05 AS SEEN ON — social proof ░ -->
+  <section class="seen" id="seen">
+    <div class="seen__wall" id="seenWall"><!-- JS: 3 auto-scrolling columns of real UGC video --></div>
+    <div class="seen__overlay">
+      <span class="mono seen__n">05.</span>
+      <h2 class="seen__title">Coppermine<br>as seen on.</h2>
+      <span class="mono">Show how you wear Coppermine on Instagram or TikTok.</span>
+    </div>
+  </section>
+
+  <!-- ░ 06 FILM (their homepage video, autoplay/loop, muted; aesthetic sound toggle) ░ -->
+  <section class="reel" id="reel">
+    <div class="reel__yt">
+      <iframe id="reelYt" title="Coppermine film" loading="lazy"
+        src="https://www.youtube.com/embed/8DkMd8CWaBE?enablejsapi=1&autoplay=1&mute=1&loop=1&playlist=8DkMd8CWaBE&controls=0&modestbranding=1&playsinline=1&rel=0"
+        frameborder="0" allow="autoplay; encrypted-media"></iframe>
+    </div>
+    <span class="mono reel__tag">06. — Coppermine, the film</span>
+    <button class="snd" id="sndToggle" aria-pressed="false" aria-label="Toggle film sound">
+      <span class="snd__bars"><i></i><i></i><i></i><i></i></span>
+      <span class="snd__label">Sound off</span>
+    </button>
+  </section>
+
+  <!-- ░ 07 STORE ░ -->
+  <section class="budin" id="budin">
+    <div class="head">
+      <span class="head__n">07.</span>
+      <h2 class="head__t">Visit the store</h2>
+      <div class="head__end"><span class="mono">Open every day 12–18</span></div>
+    </div>
+    <div class="budin__grid">
+      <div class="budin__row"><span class="mono">Address</span><span>Laugavegur 44, 101 Reykjavík</span></div>
+      <div class="budin__row"><span class="mono">Hours</span><span>Every day 12–18</span></div>
+      <div class="budin__row"><span class="mono">Email</span><a href="mailto:coppermine@coppermine.is">coppermine@coppermine.is</a></div>
+      <div class="budin__row"><span class="mono">Returns</span><span>Free exchanges · 14-day refunds</span></div>
+      <div class="budin__row"><span class="mono">Follow</span><a href="https://instagram.com/copperminervk" target="_blank" rel="noopener">@copperminervk</a></div>
+    </div>
+  </section>
+
+  <!-- ░ NEWSLETTER ░ -->
+  <section class="news" id="news">
+    <span class="mono">(Insider only)</span>
+    <h2 class="news__t">New arrivals,<br>first.</h2>
+    <p class="mono news__sub">Exclusive updates, new drops &amp; insider-only discounts.</p>
+    <form class="news__form" id="newsForm" novalidate>
+      <input id="newsEmail" type="email" placeholder="your@email.com" autocomplete="email" required />
+      <button class="link" type="submit">[ Sign up ]</button>
+    </form>
+    <p class="mono news__msg" id="newsMsg" role="status"></p>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="foot__word"><img src="assets/logo.png" alt="Coppermine" /></div>
+  <div class="foot__grid">
+    <div><span class="mono">Shop</span><a href="#ny">New arrivals</a><a href="#flokkar">Hoodies</a><a href="#flokkar">Knitwear</a><a href="#flokkar">Headwear</a></div>
+    <div><span class="mono">Collections</span><a href="#linur">Somerset</a><a href="#linur">SIXHUNNA</a><a href="#film">Runway</a></div>
+    <div><span class="mono">Follow</span><a href="https://instagram.com/copperminervk" target="_blank" rel="noopener">Instagram</a><a href="#">TikTok</a><a href="#">YouTube</a></div>
+    <div><span class="mono">Store</span><a href="#budin">Laugavegur 44</a><a href="mailto:coppermine@coppermine.is">Email</a><span class="foot__mut">Open 12–18</span></div>
+  </div>
+  <div class="foot__base">
+    <span class="mono">© 2026 Coppermine · Based in Reykjavík, Iceland</span>
+    <span class="mono">Redesign by <a href="https://sndr-studio.pages.dev" target="_blank" rel="noopener">SNDR Studio</a></span>
+  </div>
+</footer>
+
+<!-- ░ BAG DRAWER ░ -->
+<div class="bag" id="bag" aria-hidden="true">
+  <div class="bag__scrim" id="bagScrim"></div>
+  <aside class="bag__panel" role="dialog" aria-modal="true" aria-labelledby="bagTitle">
+    <header class="bag__head">
+      <h2 class="bag__title" id="bagTitle">Your bag <span id="bagQty">(0)</span></h2>
+      <button class="link" id="bagClose">[ Close ]</button>
+    </header>
+    <div class="bag__items" id="bagItems"></div>
+    <footer class="bag__foot" id="bagFoot">
+      <div class="bag__sum"><span class="mono">Subtotal</span><span class="bag__total" id="bagTotal">0 kr</span></div>
+      <p class="mono bag__note">Free exchanges · 14-day refunds. Shipping calculated at checkout.</p>
+      <button class="bag__go" id="bagGo">Checkout</button>
+    </footer>
+  </aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
