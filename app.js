@@ -110,8 +110,19 @@
          one rect read decides if the wall is near the viewport, and only then does
          it rank cards and play the closest few. IntersectionObserver is NOT used
          here because it over-reports inside the wall's 3D transform. */
-      const MAX_PLAYING = 6;
+      /* Adaptive cap. Lenis drives scrolling from rAF, so a long frame here does
+         not just drop FPS: it starves the scroll loop and the page stops moving.
+         This measures how late the 300ms timer actually arrives (a cheap proxy for
+         main-thread congestion) and backs the decode count off until it recovers,
+         so a slow machine degrades to fewer moving clips instead of freezing. */
+      const CAP_MAX = 4;
+      let cap = CAP_MAX, lastTick = performance.now();
       const visPass = () => {
+        const now = performance.now();
+        const drift = now - lastTick; lastTick = now;
+        if (drift > 800) cap = Math.max(0, cap - 1);          // congested: back off
+        else if (drift < 430 && cap < CAP_MAX) cap++;         // recovered: restore
+
         if (document.hidden) { clips.forEach(stop); return; }
         const vh = innerHeight;
         const sr = sectionEl.getBoundingClientRect();
@@ -126,7 +137,7 @@
           else stop(v);
         });
         vis.sort((a, b) => a.d - b.d);           // nearest to centre wins the slots
-        vis.forEach((o, i) => (i < MAX_PLAYING ? start(o.v) : stop(o.v)));
+        vis.forEach((o, i) => (i < cap ? start(o.v) : stop(o.v)));
       };
       setInterval(visPass, 300);
       visPass();
